@@ -1,6 +1,5 @@
 import utils.Board;
 import utils.Child;
-import utils.Player;
 import utils.Tagger;
 
 import java.io.File;
@@ -19,7 +18,6 @@ class Main5 {
         }
         String inputFile = args[0];
 
-        // 入力ファイルからシミュレーションのパラメータとプレイヤーの情報を読み込む
         try (Scanner sc = new Scanner(new File(inputFile))) {
             // 入力から各パラメータを取得する
             int R = sc.nextInt();  // 東西方向の最大値（x座標の上限）
@@ -30,89 +28,108 @@ class Main5 {
 
             // 盤面の作成
             Board board = new Board(R, T);
-            // 全プレイヤー（Tagger と Child）のリストを作成する
-            List<Player> players = new ArrayList<>();
+            // 鬼と子供を別々のリストで管理する
+            List<Tagger> taggers = new ArrayList<>();
+            List<Child> children = new ArrayList<>();
 
             // 鬼（Tagger）の初期化
             for (int i = 0; i < O; i++) {
                 int x = sc.nextInt();
                 int y = sc.nextInt();
                 int pattern = sc.nextInt();
-                players.add(new Tagger(x, y, pattern));
+                taggers.add(new Tagger(x, y, pattern));
             }
-
             // 子（Child）の初期化
             for (int i = 0; i < C; i++) {
                 int x = sc.nextInt();
                 int y = sc.nextInt();
                 int pattern = sc.nextInt();
-                players.add(new Child(x, y, pattern));
+                children.add(new Child(x, y, pattern));
             }
 
-            // シミュレーション開始前に、子がいない場合はゲーム終了
+            // シミュレーション開始前の状態出力
             int step = 0;
             boolean gameEnded = (C == 0);
             System.out.println("step " + step);
-            logStatus(players);
+            logStatus(taggers, children);
 
             // シミュレーションループ
             while (!gameEnded && step < N) {
-                // 各プレイヤーの「移動前の位置」を配列にコピー（ディープコピー相当）
-                // ※ 各プレイヤーの現在位置（getX(), getY()）の値を primitive でコピー
-                int playerCount = players.size();
-                int[] prevXs = new int[playerCount];
-                int[] prevYs = new int[playerCount];
-                for (int i = 0; i < playerCount; i++) {
-                    Player p = players.get(i);
-                    prevXs[i] = p.getX();
-                    prevYs[i] = p.getY();
+                // 各プレイヤーの「移動前の位置」を保持する（後のすれ違い判定用）
+                int taggerCount = taggers.size();
+                int childCount = children.size();
+                int[] prevTaggerXs = new int[taggerCount];
+                int[] prevTaggerYs = new int[taggerCount];
+                for (int i = 0; i < taggerCount; i++) {
+                    Tagger t = taggers.get(i);
+                    prevTaggerXs[i] = t.getX();
+                    prevTaggerYs[i] = t.getY();
+                }
+                int[] prevChildXs = new int[childCount];
+                int[] prevChildYs = new int[childCount];
+                for (int i = 0; i < childCount; i++) {
+                    Child c = children.get(i);
+                    prevChildXs[i] = c.getX();
+                    prevChildYs[i] = c.getY();
                 }
 
-                // 各プレイヤーの移動を実施（同時移動をシミュレート）
-                for (Player p : players) {
-                    if (!p.isCaptured()) {
-                        p.move(board, players);
+                // 各プレイヤーの移動（捕まっていない場合のみ）
+                for (Tagger t : taggers) {
+                    if (!t.isCaptured()) {
+                        // ※ move の引数はシグネチャに合わせて変更する必要がある場合もありますが、
+                        //    ここでは taggers, children の両方を渡す例とします
+                        t.move(board, children);
+                    }
+                }
+                for (Child c : children) {
+                    if (!c.isCaptured()) {
+                        c.move(board, taggers);
                     }
                 }
 
-                // 衝突判定
-                for (Player p : players) {
-                    if (p instanceof Tagger) {
-                        for (Player q : players) {
-                            if (q instanceof Child && p.getX() == q.getX() && p.getY() == q.getY()) {
-                                q.setCaptured(true);
-                            }
+                // 衝突判定：各鬼と各子供の座標が一致すれば、その子供は捕まる
+                for (Tagger t : taggers) {
+                    for (Child c : children) {
+                        if (!c.isCaptured() && t.getX() == c.getX() && t.getY() == c.getY()) {
+                            c.setCaptured(true);
                         }
                     }
                 }
 
-                // すれ違い判定
-                for (int i = 0; i < playerCount; i++) {
-                    Player p = players.get(i);
-                    if (!(p instanceof Tagger)) continue;
-                    for (int j = 0; j < playerCount; j++) {
-                        Player q = players.get(j);
-                        if (!(q instanceof Child)) continue;
-                        if (prevXs[i] == q.getX() && prevYs[i] == q.getY() &&
-                                p.getX() == prevXs[j] && p.getY() == prevYs[j]) {
-                            q.setCaptured(true);
+                // すれ違い判定：移動前後で鬼と子供が入れ替わっていれば捕獲
+                for (int i = 0; i < taggerCount; i++) {
+                    Tagger t = taggers.get(i);
+                    for (int j = 0; j < childCount; j++) {
+                        Child c = children.get(j);
+                        if (!c.isCaptured() &&
+                                prevTaggerXs[i] == c.getX() && prevTaggerYs[i] == c.getY() &&
+                                t.getX() == prevChildXs[j] && t.getY() == prevChildYs[j]) {
+                            c.setCaptured(true);
                         }
                     }
                 }
 
-                // ステップ番号を更新し、状態を出力
+                // ステップ番号更新と状態出力
                 step++;
                 System.out.println("step " + step);
-                logStatus(players);
+                logStatus(taggers, children);
 
-                // 勝敗判定：全ての子が捕まったら鬼の勝ちとして終了
-                if (players.stream().filter(p -> p instanceof Child).allMatch(Player::isCaptured)) {
+                // 勝敗判定：全ての子供が捕まっていれば鬼の勝ち
+                boolean allCaptured = true;
+                for (Child c : children) {
+                    if (!c.isCaptured()) {
+                        allCaptured = false;
+                        break;
+                    }
+                }
+                if (allCaptured) {
                     gameEnded = true;
                 }
             }
+
             // シミュレーション終了時の勝敗出力
             if (!gameEnded) {
-                System.out.println("C"); // 規定時間までに捕まらなかったので子の勝ち
+                System.out.println("C"); // 規定時間までに捕まらなかったので子供の勝ち
             } else {
                 System.out.println("O"); // 鬼の勝ち
             }
@@ -122,29 +139,24 @@ class Main5 {
     }
 
     /**
-     * プレイヤーの現在の状態を標準出力に出力します。
-     * Tagger（鬼）の座標を先に出力し、続いて Child（子）の座標または "captured" の文字列を出力します。
-     *
-     * @param players プレイヤーのリスト
+     * 鬼と子供の状態を出力する。
+     * 鬼の座標を先に出力し、次に子供については捕まっている場合 "captured"、
+     * そうでなければ座標を出力する。
      */
-    private static void logStatus(List<Player> players) {
+    private static void logStatus(List<Tagger> taggers, List<Child> children) {
         StringBuilder output = new StringBuilder();
 
-        // まず Tagger の状態を出力
-        for (Player p : players) {
-            if (p instanceof Tagger) {
-                output.append(p.getX()).append(" ").append(p.getY()).append("\n");
-            }
+        // 鬼の状態出力
+        for (Tagger t : taggers) {
+            output.append(t.getX()).append(" ").append(t.getY()).append("\n");
         }
 
-        // 次に Child の状態を出力（捕まっている場合は "captured" と出力）
-        for (Player p : players) {
-            if (p instanceof Child) {
-                if (p.isCaptured()) {
-                    output.append("captured\n");
-                } else {
-                    output.append(p.getX()).append(" ").append(p.getY()).append("\n");
-                }
+        // 子供の状態出力
+        for (Child c : children) {
+            if (c.isCaptured()) {
+                output.append("captured\n");
+            } else {
+                output.append(c.getX()).append(" ").append(c.getY()).append("\n");
             }
         }
         System.out.print(output.toString());
