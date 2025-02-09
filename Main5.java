@@ -48,31 +48,71 @@ class Main5 {
                 int pattern = sc.nextInt();
                 players.add(new Child(x, y, pattern));
             }
-            // シミュレーションループ
+
+            // シミュレーション開始前に、子がいない場合はゲーム終了
             int step = 0;
             boolean gameEnded = (C == 0);
             System.out.println("step " + step);
             logStatus(players);
-            while (!gameEnded && step < N) {
-                // 移動後の状態を出力する
-                step++;
 
-                // 各プレイヤーの移動を実施（同時移動をシミュレートするために各プレイヤーで move() を呼ぶ）
-                // ※ すれ違い判定や衝突判定などが必要な場合、移動前の状態の記録が必要です
+            // シミュレーションループ
+            while (!gameEnded && step < N) {
+                // 各プレイヤーの「移動前の位置」を配列にコピー（ディープコピー相当）
+                // ※ 各プレイヤーの現在位置（getX(), getY()）の値を primitive でコピー
+                int playerCount = players.size();
+                int[] prevXs = new int[playerCount];
+                int[] prevYs = new int[playerCount];
+                for (int i = 0; i < playerCount; i++) {
+                    Player p = players.get(i);
+                    prevXs[i] = p.getX();
+                    prevYs[i] = p.getY();
+                }
+
+                // 各プレイヤーの移動を実施（同時移動をシミュレート）
                 for (Player p : players) {
                     p.move(board, players);
                 }
 
+                // 衝突判定（同一領域にいる場合）
+                for (Player p : players) {
+                    if (p instanceof Tagger) {
+                        for (Player q : players) {
+                            if (q instanceof Child && p.getX() == q.getX() && p.getY() == q.getY()) {
+                                q.setCaptured(true);
+                            }
+                        }
+                    }
+                }
+
+                // すれ違い判定の実装：
+                // Tagger（鬼）とChild（子）のそれぞれの「前の位置」と「移動後の位置」を比較する。
+                // すれ違い判定の条件：
+                //  鬼の前の位置 == 子の移動後の位置 かつ
+                //  鬼の移動後の位置 == 子の前の位置
+                for (int i = 0; i < playerCount; i++) {
+                    Player p = players.get(i);
+                    if (!(p instanceof Tagger)) continue;
+                    for (int j = 0; j < playerCount; j++) {
+                        Player q = players.get(j);
+                        if (!(q instanceof Child)) continue;
+                        if (prevXs[i] == q.getX() && prevYs[i] == q.getY() &&
+                                p.getX() == prevXs[j] && p.getY() == prevYs[j]) {
+                            q.setCaptured(true);
+                        }
+                    }
+                }
+
+                // ステップ番号を更新し、状態を出力
+                step++;
                 System.out.println("step " + step);
                 logStatus(players);
 
-
-                // 勝敗判定（ここでは全プレイヤーが捕まった場合を鬼の勝ちとする）
-                if (players.stream().allMatch(Player::isCaptured)) {
+                // 勝敗判定：全ての子が捕まったら鬼の勝ちとして終了
+                if (players.stream().filter(p -> p instanceof Child).allMatch(Player::isCaptured)) {
                     gameEnded = true;
                 }
             }
-            // シミュレーションが終了した時点で、勝敗を出力する
+            // シミュレーション終了時の勝敗出力
             if (!gameEnded) {
                 System.out.println("C"); // 規定時間までに捕まらなかったので子の勝ち
             } else {
@@ -109,10 +149,6 @@ class Main5 {
                 }
             }
         }
-
-        // 出力が空でない場合のみ出力
-        if (output.length() > 0) {
-            System.out.print(output.toString());
-        }
+        System.out.print(output.toString());
     }
 }
