@@ -28,13 +28,6 @@ class Main5 {
             int O = sc.nextInt();  // 鬼（Tagger）の数
             int C = sc.nextInt();  // 子（Child）の数
 
-            // Printデバッグ
-            System.out.println("R: " + R);
-            System.out.println("T: " + T);
-            System.out.println("N: " + N);
-            System.out.println("O: " + O);
-            System.out.println("C: " + C);
-
             // 盤面の作成
             Board board = new Board(R, T);
             // 全プレイヤー（Tagger と Child）のリストを作成する
@@ -102,7 +95,7 @@ class Main5 {
         // まず Tagger の状態を出力
         for (Player p : players) {
             if (p instanceof Tagger) {
-                output.append(p.getX()).append(" ").append(p.getY()).append(" ");
+                output.append(p.getX()).append(" ").append(p.getY()).append("\n");
             }
         }
 
@@ -110,16 +103,16 @@ class Main5 {
         for (Player p : players) {
             if (p instanceof Child) {
                 if (p.isCaptured()) {
-                    output.append("captured ");
+                    output.append("captured\n");
                 } else {
-                    output.append(p.getX()).append(" ").append(p.getY()).append(" ");
+                    output.append(p.getX()).append(" ").append(p.getY()).append("\n");
                 }
             }
         }
 
         // 出力が空でない場合のみ出力
         if (output.length() > 0) {
-            System.out.println(output.toString().trim());
+            System.out.print(output.toString());
         }
     }
 }

@@ -1,15 +1,11 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TestRunner {
 
     private static final String[] TEST_CASES = {
-            "sample0-0", "sample0-1", "sample0-2",
+            "sample0-0", "sample0-1", "sample0-2", "sample0-3",
             "sample1-0", "sample1-1", "sample1-2", "sample1-3",
             "sample2-0", "sample2-1",
             "sample3-0", "sample3-1",
