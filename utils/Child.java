@@ -71,14 +71,8 @@ public class Child extends Player<Tagger> {
      * 水平・垂直のみの移動、または時計回りの代替方向を試みる。
      */
     private void moveAwayFrom(Tagger target, Board board) {
-//        System.out.println("this: " + this.x + " " + this.y);
         int dx = target.getX() - this.x;
         int dy = target.getY() - this.y;
-        //printデバッグ
-//        System.out.println("dx: " + dx + " dy: " + dy);
-        // 近づくための移動方向（-1,0,1）の逆をとる
-//        int intendedStepX = -Integer.compare(dx, 0);
-//        int intendedStepY = -Integer.compare(dy, 0);
         int intendedStepX;
         int intendedStepY;
         if (dx > 0) {
@@ -99,6 +93,9 @@ public class Child extends Player<Tagger> {
 //        System.out.println("intendedStepX: " + intendedStepX + " intendedStepY: " + intendedStepY);
         // 縦横どちらかのみに移動しようとする場合
         if (intendedStepX == 0 || intendedStepY == 0) {
+            // 北東の隅にいて北へ行こうとした場合，北西の隅にいて西にいた場合，南西の隅にいて南にいた場合，南東の隅にいて東にいた場合
+            // これらの時は時計回りしても壁にぶつかってしまうので移動しない
+            // それ以外の場合は移動する
             if (intendedStepX > 0) {
                 currentDir = 0; // 東
             } else if (intendedStepY < 0) {
@@ -108,7 +105,18 @@ public class Child extends Player<Tagger> {
             } else {
                 currentDir = 3; // 北
             }
-            moveInDirection(board);
+            int attempts = 0;
+            while (attempts < 2) {
+                int nextX = x + directionX[currentDir];
+                int nextY = y + directionY[currentDir];
+                if (board.inRange(nextX, nextY)) {
+                    x = nextX;
+                    y = nextY;
+                    return;
+                }
+                currentDir = (currentDir + 1) % 4;
+                attempts++;
+            }
             return;
         }
 
