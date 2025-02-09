@@ -10,6 +10,7 @@ public abstract class Player<O extends Player<?>> {
     protected int[] directionX;
     protected int[] directionY;
     protected int currentDir = 0;
+    protected O nearestOpponent;
 
     public Player(int x, int y, int pattern) {
         this.x = x;
@@ -31,6 +32,25 @@ public abstract class Player<O extends Player<?>> {
 
     public int getY() {
         return y;
+    }
+
+    /**
+     * nearestOpponent の getter
+     */
+    public O getNearestOpponent() {
+        return nearestOpponent;
+    }
+
+    /**
+     * nearestOpponent の setter
+     */
+    public void setNearestOpponent(O opponent) {
+        if (opponent == null) {
+            this.nearestOpponent = null;
+        } else {
+            // 各サブクラスで実装された deepCopy() を呼び出して深いコピーを得る
+            this.nearestOpponent = (O) opponent.deepCopy();
+        }
     }
 
     /**
@@ -61,5 +81,7 @@ public abstract class Player<O extends Player<?>> {
     /**
      * 渡された対象相手リストの中から、チェス盤距離（Chessboard Distance）が最小の相手を返す。
      */
-    protected abstract O findNearestOpponent(List<O> opponents);
+    protected abstract void findNearestOpponent(List<O> opponents);
+
+    public abstract Player<?> deepCopy();
 }

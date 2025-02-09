@@ -36,9 +36,8 @@ public class Tagger extends Player<Child> {
                 moveInDirection(board);
                 break;
             case 3:
-                Child nearest = findNearestOpponent(opponents);
-                if (nearest != null) {
-                    moveToward(nearest, board);
+                if (this.nearestOpponent != null) {
+                    moveToward(this.nearestOpponent, board);
                 }
                 break;
             default:
@@ -47,7 +46,7 @@ public class Tagger extends Player<Child> {
     }
 
     @Override
-    protected Child findNearestOpponent(List<Child> opponents) {
+    public void findNearestOpponent(List<Child> opponents) {
         Child nearest = null;
         int minDistance = Integer.MAX_VALUE;
         for (Child child : opponents) {
@@ -62,7 +61,7 @@ public class Tagger extends Player<Child> {
                 nearest = child;
             }
         }
-        return nearest;
+        setNearestOpponent(nearest);
     }
 
     /**
@@ -80,5 +79,20 @@ public class Tagger extends Player<Child> {
             this.x = nextX;
             this.y = nextY;
         }
+    }
+
+    @Override
+    public Player<?> deepCopy() {
+        Tagger copy = new Tagger(this.x, this.y, this.pattern);
+        copy.captured = this.captured;
+        copy.currentDir = this.currentDir;
+        if (this.directionX != null) {
+            copy.directionX = this.directionX.clone();
+        }
+        if (this.directionY != null) {
+            copy.directionY = this.directionY.clone();
+        }
+        // nearestOpponent は、コピーの対象外または必要に応じて別途コピーする
+        return copy;
     }
 }

@@ -73,11 +73,17 @@ class Main5 {
                     prevChildYs[i] = c.getY();
                 }
 
+                for (Tagger t : taggers) {
+                    t.findNearestOpponent(children);
+                }
+
+                for (Child c : children) {
+                    c.findNearestOpponent(taggers);
+                }
+
                 // 各プレイヤーの移動（捕まっていない場合のみ）
                 for (Tagger t : taggers) {
                     if (!t.isCaptured()) {
-                        // ※ move の引数はシグネチャに合わせて変更する必要がある場合もありますが、
-                        //    ここでは taggers, children の両方を渡す例とします
                         t.move(board, children);
                     }
                 }
