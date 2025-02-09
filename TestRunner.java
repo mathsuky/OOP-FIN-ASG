@@ -1,4 +1,7 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,21 +43,27 @@ public class TestRunner {
     public static void main(String[] args) {
         System.out.println("\n==================== 🏁 TEST RUNNER 🏁 ====================\n");
         for (String baseName : TEST_CASES) {
+            // 入力ファイル名は sampleX-y.txt
             String inputFile = baseName + ".txt";
+            // 期待出力ファイルは sampleX-y_output.txt
             String expectFile = baseName + "_output.txt";
+            // 実際の出力は Main5 が出力するログファイル sampleX-y.txt.log とする
+            String actualOutputFile = inputFile + ".log";
 
-            List<String> actualOutput;
             try {
-                actualOutput = runProgramAndGetOutput("Main5", inputFile);
+                // Main5 を実行して、出力ファイルが作成されるのを待つ
+                runProgram("Main5", inputFile);
             } catch (IOException | InterruptedException e) {
                 System.err.println("❌ テスト実行中にエラーが発生しました: " + e.getMessage());
                 e.printStackTrace();
                 continue;
             }
 
+            // 出力ファイルと期待ファイルの内容をそれぞれ読み込む
+            List<String> actualOutput = readAllLines(actualOutputFile);
             List<String> expectedOutput = readAllLines(expectFile);
-            boolean result = compareLines(expectedOutput, actualOutput);
 
+            boolean result = compareLines(expectedOutput, actualOutput);
             if (result) {
                 System.out.println(baseName + ".txt ✅ passed!");
                 passedCount++;
@@ -84,24 +93,15 @@ public class TestRunner {
     }
 
     /**
-     * 指定したメインクラスと入力ファイルでプログラムを実行し、標準出力を行単位で取得する。
+     * 指定したメインクラスと入力ファイルでプログラムを実行する。
+     * 実行後、プログラムが出力するログファイル（"filename.txt.log"）が生成されるものとする。
      */
-    private static List<String> runProgramAndGetOutput(String mainClass, String inputFile)
+    private static void runProgram(String mainClass, String inputFile)
             throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder("java", mainClass, inputFile);
-        pb.redirectErrorStream(true); // 標準エラーを標準出力にマージ
+        pb.redirectErrorStream(true);
         Process process = pb.start();
-
-        List<String> outputLines = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(process.getInputStream()))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                outputLines.add(line);
-            }
-        }
         process.waitFor();
-        return outputLines;
     }
 
     /**
@@ -134,10 +134,9 @@ public class TestRunner {
 
     /**
      * 期待出力と実際出力の各行を比較し、
-     * 差分が発見された場合はその最初の一箇所のみ詳細を出力します。
+     * 差分が発見された場合はその最初の一箇所のみ詳細を出力する。
      */
     private static void compareLinesVerbose(List<String> expected, List<String> actual) {
-        // 行数が一致している場合、最初の不一致のみを出力
         int max = Math.min(expected.size(), actual.size());
         for (int i = 0; i < max; i++) {
             if (!expected.get(i).equals(actual.get(i))) {
@@ -146,11 +145,9 @@ public class TestRunner {
                 return;
             }
         }
-//        // 行数が異なる場合、差分として一度だけ出力して終了
-//        if (expected.size() != actual.size()) {
-//            System.out.printf("⚠️ 行数が一致しません (expected=%d, actual=%d)\n",
-//                    expected.size(), actual.size());
-//            return;
-//        }
+        if (expected.size() != actual.size()) {
+            System.out.printf("⚠️ 行数が一致しません (expected=%d, actual=%d)\n",
+                    expected.size(), actual.size());
+        }
     }
 }

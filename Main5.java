@@ -3,12 +3,13 @@ import utils.Child;
 import utils.Tagger;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-// TODO: 絶対に標準出力ではなくてファイル出力に変え忘れない！！！！！！！！
 class Main5 {
     public static void main(String[] args) {
         // 引数の数が1でなければ使用方法を表示して終了する
@@ -17,8 +18,12 @@ class Main5 {
             System.exit(1);
         }
         String inputFile = args[0];
+        String outputFile = inputFile + ".log";
 
-        try (Scanner sc = new Scanner(new File(inputFile))) {
+        // 入力ファイルと出力ファイルを同時にオープンする
+        try (Scanner sc = new Scanner(new File(inputFile));
+             PrintWriter writer = new PrintWriter(new FileWriter(outputFile))) {
+
             // 入力から各パラメータを取得する
             int R = sc.nextInt();  // 東西方向の最大値（x座標の上限）
             int T = sc.nextInt();  // 南北方向の最大値（y座標の上限）
@@ -50,8 +55,8 @@ class Main5 {
             // シミュレーション開始前の状態出力
             int step = 0;
             boolean gameEnded = (C == 0);
-            System.out.println("step " + step);
-            logStatus(taggers, children);
+            writer.println("step " + step);
+            logStatus(taggers, children, writer);
 
             // シミュレーションループ
             while (!gameEnded && step < N) {
@@ -73,10 +78,10 @@ class Main5 {
                     prevChildYs[i] = c.getY();
                 }
 
+                // 各プレイヤーの nearestOpponent をスナップショットに基づいて更新
                 for (Tagger t : taggers) {
                     t.findNearestOpponent(children);
                 }
-
                 for (Child c : children) {
                     c.findNearestOpponent(taggers);
                 }
@@ -117,8 +122,8 @@ class Main5 {
 
                 // ステップ番号更新と状態出力
                 step++;
-                System.out.println("step " + step);
-                logStatus(taggers, children);
+                writer.println("step " + step);
+                logStatus(taggers, children, writer);
 
                 // 勝敗判定：全ての子供が捕まっていれば鬼の勝ち
                 boolean allCaptured = true;
@@ -135,9 +140,9 @@ class Main5 {
 
             // シミュレーション終了時の勝敗出力
             if (!gameEnded) {
-                System.out.println("C"); // 規定時間までに捕まらなかったので子供の勝ち
+                writer.println("C"); // 規定時間までに捕まらなかったので子供の勝ち
             } else {
-                System.out.println("O"); // 鬼の勝ち
+                writer.println("O"); // 鬼の勝ち
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -145,11 +150,11 @@ class Main5 {
     }
 
     /**
-     * 鬼と子供の状態を出力する。
+     * 鬼と子供の状態をファイルに出力する。
      * 鬼の座標を先に出力し、次に子供については捕まっている場合 "captured"、
      * そうでなければ座標を出力する。
      */
-    private static void logStatus(List<Tagger> taggers, List<Child> children) {
+    private static void logStatus(List<Tagger> taggers, List<Child> children, PrintWriter writer) {
         StringBuilder output = new StringBuilder();
 
         // 鬼の状態出力
@@ -165,6 +170,6 @@ class Main5 {
                 output.append(c.getX()).append(" ").append(c.getY()).append("\n");
             }
         }
-        System.out.print(output.toString());
+        writer.print(output.toString());
     }
 }
