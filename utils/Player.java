@@ -34,14 +34,17 @@ public abstract class Player {
     }
 
     protected void moveInDirection(Board board) {
-        if (board.inRange(x + directionX[currentDir], y + directionY[currentDir])) {
-            x += directionX[currentDir];
-            y += directionY[currentDir];
-        } else {
-            // TODO: エラーしょりはこれで十分か？
+        int attempts = 0;
+        while (attempts < 4) {
+            int nextX = x + directionX[currentDir];
+            int nextY = y + directionY[currentDir];
+            if (board.inRange(nextX, nextY)) {
+                x = nextX;
+                y = nextY;
+                return;
+            }
             currentDir = (currentDir + 1) % 4;
-            x += directionX[currentDir];
-            y += directionY[currentDir];
+            attempts++;
         }
     }
 

@@ -137,14 +137,8 @@ public class TestRunner {
      * 差分が発見された場合はその最初の一箇所のみ詳細を出力します。
      */
     private static void compareLinesVerbose(List<String> expected, List<String> actual) {
-        // 行数が異なる場合、差分として一度だけ出力して終了
-        if (expected.size() != actual.size()) {
-            System.out.printf("⚠️ 行数が一致しません (expected=%d, actual=%d)\n",
-                    expected.size(), actual.size());
-            return;
-        }
         // 行数が一致している場合、最初の不一致のみを出力
-        int max = expected.size();
+        int max = Math.min(expected.size(), actual.size());
         for (int i = 0; i < max; i++) {
             if (!expected.get(i).equals(actual.get(i))) {
                 System.out.printf("⚠️ 行 %d が不一致:\n  expected: \"%s\"\n  actual:   \"%s\"\n",
@@ -152,5 +146,11 @@ public class TestRunner {
                 return;
             }
         }
+//        // 行数が異なる場合、差分として一度だけ出力して終了
+//        if (expected.size() != actual.size()) {
+//            System.out.printf("⚠️ 行数が一致しません (expected=%d, actual=%d)\n",
+//                    expected.size(), actual.size());
+//            return;
+//        }
     }
 }

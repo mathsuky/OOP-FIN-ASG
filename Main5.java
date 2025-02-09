@@ -70,10 +70,12 @@ class Main5 {
 
                 // 各プレイヤーの移動を実施（同時移動をシミュレート）
                 for (Player p : players) {
-                    p.move(board, players);
+                    if (!p.isCaptured()) {
+                        p.move(board, players);
+                    }
                 }
 
-                // 衝突判定（同一領域にいる場合）
+                // 衝突判定
                 for (Player p : players) {
                     if (p instanceof Tagger) {
                         for (Player q : players) {
@@ -84,11 +86,7 @@ class Main5 {
                     }
                 }
 
-                // すれ違い判定の実装：
-                // Tagger（鬼）とChild（子）のそれぞれの「前の位置」と「移動後の位置」を比較する。
-                // すれ違い判定の条件：
-                //  鬼の前の位置 == 子の移動後の位置 かつ
-                //  鬼の移動後の位置 == 子の前の位置
+                // すれ違い判定
                 for (int i = 0; i < playerCount; i++) {
                     Player p = players.get(i);
                     if (!(p instanceof Tagger)) continue;
