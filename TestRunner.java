@@ -6,147 +6,117 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * テスト実行用クラス
- *
- * 動作概要:
- *  - sampleX-y.txt (入力) と sampleX-y_output.txt (期待する出力) をペアとして扱う。
- *  - それぞれに対し Main5 をサブプロセスで実行し、その標準出力を取得して期待出力と比較する。
- *  - 比較結果を「PASSED」「FAILED」として標準出力に表示する。
- */
 public class TestRunner {
 
-    // 実際にテストしたいファイル名（拡張子を除く部分）をリストアップする
-    // 例: sample0-0, sample0-1, sample1-0, ...
     private static final String[] TEST_CASES = {
-            "sample0-0",
-            "sample0-1",
-            "sample0-2",
-            "sample1-0",
-            "sample1-1",
-            "sample1-2",
-            "sample1-3",
-            "sample2-0",
-            "sample2-1",
-            "sample3-0",
-            "sample3-1",
-            "sample4-0",
-            "sample4-1"
+            "sample0-0", "sample0-1", "sample0-2",
+            "sample1-0", "sample1-1", "sample1-2", "sample1-3",
+            "sample2-0", "sample2-1",
+            "sample3-0", "sample3-1",
+            "sample4-0", "sample4-1"
     };
 
+    private static int passedCount = 0;
+    private static int failedCount = 0;
+    private static final List<String> failedTests = new ArrayList<>();
+
     public static void main(String[] args) {
+        System.out.println("\n==================== 🏁 TEST RUNNER 🏁 ====================\n");
         for (String baseName : TEST_CASES) {
-            String inputFile  = baseName + ".txt";
+            String inputFile = baseName + ".txt";
             String expectFile = baseName + "_output.txt";
 
-            System.out.println("=== Testing " + inputFile + " ===");
-
-            // Main5 をサブプロセスとして実行し、標準出力を文字列として受け取る
             List<String> actualOutput;
             try {
                 actualOutput = runProgramAndGetOutput("Main5", inputFile);
             } catch (IOException | InterruptedException e) {
-                System.err.println("テスト実行中にエラーが発生しました: " + e.getMessage());
+                System.err.println("❌ テスト実行中にエラーが発生しました: " + e.getMessage());
                 e.printStackTrace();
                 continue;
             }
 
-            // 期待する出力ファイルを行単位で読み込み
             List<String> expectedOutput = readAllLines(expectFile);
 
-            // 比較
             boolean result = compareLines(expectedOutput, actualOutput);
 
-            // 結果表示
             if (result) {
-                System.out.println("PASSED");
+                System.out.println(baseName + ".txt ✅ passed!");
+                passedCount++;
             } else {
-                System.out.println("FAILED");
-                // 不一致の場合、デバッグしやすいよう差分表示などを行ってもよい
+                System.out.println(baseName + ".txt ❌ failed...");
+                failedTests.add(baseName);
+                failedCount++;
             }
-            System.out.println();
         }
+
+        // 最終結果の表示
+        System.out.println("\n==================== 📊 TEST SUMMARY 📊 ====================");
+        System.out.printf("✅ PASSED: %d\n", passedCount);
+        System.out.printf("❌ FAILED: %d\n", failedCount);
+        System.out.printf("🏆 Success Rate: %.2f%%\n", (passedCount * 100.0 / TEST_CASES.length));
+
+//        if (!failedTests.isEmpty()) {
+//            System.out.println("\n==================== ❌ FAILED TEST DETAILS ❌ ====================");
+//            for (String failedTest : failedTests) {
+//                System.out.println("🔹 Test: " + failedTest + ".txt");
+//                List<String> actualOutput = readAllLines(failedTest + ".txt");
+//                List<String> expectedOutput = readAllLines(failedTest + "_output.txt");
+//                compareLinesVerbose(expectedOutput, actualOutput);
+//            }
+//        }
     }
 
-    /**
-     * 指定したクラス名(Main5)・引数(inputFile)でサブプロセスを起動し、その標準出力を行ごとに取得する。
-     * 実行可能なクラスパスの設定は環境に合わせて調整が必要。
-     */
     private static List<String> runProgramAndGetOutput(String mainClass, String inputFile)
             throws IOException, InterruptedException {
-        // 実行コマンド: "java Main5 sampleX-y.txt"
-        // ClassPath等は環境に応じて修正のこと
-        ProcessBuilder pb = new ProcessBuilder(
-                "java", mainClass, inputFile
-        );
-
-        // 実行ディレクトリを設定する場合はここで setDirectory する
-        // pb.directory(new File("bin"));
-
-        pb.redirectErrorStream(true); // 標準エラーを標準出力にマージ
+        ProcessBuilder pb = new ProcessBuilder("java", mainClass, inputFile);
+        pb.redirectErrorStream(true);
         Process process = pb.start();
 
-        // 標準出力を行単位で取得
         List<String> outputLines = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(process.getInputStream()))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
             while ((line = br.readLine()) != null) {
                 outputLines.add(line);
             }
         }
-
-        // サブプロセスの終了を待機
         process.waitFor();
-
         return outputLines;
     }
 
-    /**
-     * 指定したファイルを行単位ですべて読み込み、リストにして返す。
-     * ファイルが存在しない場合は空のリストを返す。
-     */
     private static List<String> readAllLines(String fileName) {
         List<String> lines = new ArrayList<>();
         File f = new File(fileName);
-
         if (!f.exists()) {
-            // 存在しない場合は空のリストにして返す
-            System.err.println("期待ファイルが見つかりません: " + fileName);
+            System.err.println("⚠️ 期待ファイルが見つかりません: " + fileName);
             return lines;
         }
-
         try (BufferedReader br = new BufferedReader(new FileReader(f))) {
             String line;
             while ((line = br.readLine()) != null) {
                 lines.add(line);
             }
         } catch (IOException e) {
-            System.err.println("ファイル読み込み中にエラー: " + e.getMessage());
+            System.err.println("⚠️ ファイル読み込み中にエラー: " + e.getMessage());
         }
-
         return lines;
     }
 
-    /**
-     * 2つの文字列リストを比較し、すべての行が完全に一致すれば true を返す。
-     * 行数や内容に差があれば false を返す。
-     */
     private static boolean compareLines(List<String> expected, List<String> actual) {
+        return expected.equals(actual);
+    }
+
+    private static void compareLinesVerbose(List<String> expected, List<String> actual) {
         if (expected.size() != actual.size()) {
-            System.out.printf("行数が一致しません (expected=%d, actual=%d)%n",
+            System.out.printf("⚠️ 行数が一致しません (expected=%d, actual=%d)\n",
                     expected.size(), actual.size());
-            return false;
         }
 
-        for (int i = 0; i < expected.size(); i++) {
+        for (int i = 0; i < Math.min(expected.size(), actual.size()); i++) {
             String eLine = expected.get(i);
             String aLine = actual.get(i);
             if (!eLine.equals(aLine)) {
-                System.out.printf("行 %d が不一致:%n  expected: \"%s\"%n  actual:   \"%s\"%n", i+1, eLine, aLine);
-                return false;
+                System.out.printf("⚠️ 行 %d が不一致:\n  expected: \"%s\"\n  actual:   \"%s\"\n", i + 1, eLine, aLine);
             }
         }
-        return true;
     }
 }
