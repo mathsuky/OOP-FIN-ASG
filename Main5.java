@@ -25,26 +25,23 @@ class Main5 {
              PrintWriter writer = new PrintWriter(new FileWriter(outputFile))) {
 
             // 入力から各パラメータを取得する
-            int R = sc.nextInt();  // 東西方向の最大値（x座標の上限）
-            int T = sc.nextInt();  // 南北方向の最大値（y座標の上限）
-            int N = sc.nextInt();  // シミュレーションの時間制限（ステップ数）
-            int O = sc.nextInt();  // 鬼（Tagger）の数
-            int C = sc.nextInt();  // 子（Child）の数
+            int R = sc.nextInt();
+            int T = sc.nextInt();
+            int N = sc.nextInt();
+            int O = sc.nextInt();
+            int C = sc.nextInt();
 
-            // 盤面の作成
+
             Board board = new Board(R, T);
-            // 鬼と子供を別々のリストで管理する
+
             List<Tagger> taggers = new ArrayList<>();
             List<Child> children = new ArrayList<>();
-
-            // 鬼（Tagger）の初期化
             for (int i = 0; i < O; i++) {
                 int x = sc.nextInt();
                 int y = sc.nextInt();
                 int pattern = sc.nextInt();
                 taggers.add(new Tagger(x, y, pattern));
             }
-            // 子（Child）の初期化
             for (int i = 0; i < C; i++) {
                 int x = sc.nextInt();
                 int y = sc.nextInt();
@@ -52,7 +49,6 @@ class Main5 {
                 children.add(new Child(x, y, pattern));
             }
 
-            // シミュレーション開始前の状態出力
             int step = 0;
             boolean gameEnded = (C == 0);
             writer.println("step " + step);
@@ -78,7 +74,7 @@ class Main5 {
                     prevChildYs[i] = c.getY();
                 }
 
-                // 各プレイヤーの nearestOpponent をスナップショットに基づいて更新
+                // 各プレイヤーの nearestOpponent を更新
                 for (Tagger t : taggers) {
                     t.findNearestOpponent(children);
                 }
@@ -86,7 +82,6 @@ class Main5 {
                     c.findNearestOpponent(taggers);
                 }
 
-                // 各プレイヤーの移動（捕まっていない場合のみ）
                 for (Tagger t : taggers) {
                     if (!t.isCaptured()) {
                         t.move(board, children);
@@ -98,7 +93,7 @@ class Main5 {
                     }
                 }
 
-                // 衝突判定：各鬼と各子供の座標が一致すれば、その子供は捕まる
+                // 衝突判定
                 for (Tagger t : taggers) {
                     for (Child c : children) {
                         if (!c.isCaptured() && t.getX() == c.getX() && t.getY() == c.getY()) {
@@ -107,7 +102,7 @@ class Main5 {
                     }
                 }
 
-                // すれ違い判定：移動前後で鬼と子供が入れ替わっていれば捕獲
+                // すれ違い判定
                 for (int i = 0; i < taggerCount; i++) {
                     Tagger t = taggers.get(i);
                     for (int j = 0; j < childCount; j++) {
@@ -120,12 +115,11 @@ class Main5 {
                     }
                 }
 
-                // ステップ番号更新と状態出力
                 step++;
                 writer.println("step " + step);
                 logStatus(taggers, children, writer);
 
-                // 勝敗判定：全ての子供が捕まっていれば鬼の勝ち
+                // 勝敗判定
                 boolean allCaptured = true;
                 for (Child c : children) {
                     if (!c.isCaptured()) {
@@ -140,9 +134,9 @@ class Main5 {
 
             // シミュレーション終了時の勝敗出力
             if (!gameEnded) {
-                writer.println("C"); // 規定時間までに捕まらなかったので子供の勝ち
+                writer.println("C");
             } else {
-                writer.println("O"); // 鬼の勝ち
+                writer.println("O");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -151,18 +145,14 @@ class Main5 {
 
     /**
      * 鬼と子供の状態をファイルに出力する。
-     * 鬼の座標を先に出力し、次に子供については捕まっている場合 "captured"、
-     * そうでなければ座標を出力する。
      */
     private static void logStatus(List<Tagger> taggers, List<Child> children, PrintWriter writer) {
         StringBuilder output = new StringBuilder();
 
-        // 鬼の状態出力
         for (Tagger t : taggers) {
             output.append(t.getX()).append(" ").append(t.getY()).append("\n");
         }
 
-        // 子供の状態出力
         for (Child c : children) {
             if (c.isCaptured()) {
                 output.append("captured\n");

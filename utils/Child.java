@@ -7,25 +7,20 @@ public class Child extends Player<Tagger> {
     public Child(int x, int y, int pattern) {
         super(x, y, pattern);
         if (pattern == 1) {
-            // 初期は東, 南, 西, 北 の順（東側を優先）
+            // 初期は東, 南, 西, 北 の順
             directionX = new int[]{1, 0, -1, 0};
             directionY = new int[]{0, -1, 0, 1};
         } else if (pattern == 2) {
-            // 初期は西, 南, 東, 北 の順（西側を優先）
+            // 初期は西, 南, 東, 北 の順
             directionX = new int[]{-1, 0, 1, 0};
             directionY = new int[]{0, -1, 0, 1};
         } else if (pattern == 3) {
-            // 初期は東, 南, 西, 北 の順（東側を優先）
+            // 初期は東, 南, 西, 北 の順
             directionX = new int[]{1, 0, -1, 0};
             directionY = new int[]{0, -1, 0, 1};
         }
     }
 
-    /**
-     * Child の移動処理。
-     * pattern 0～2 の場合は moveInDirection を用い、
-     * pattern 3 の場合は最も近い鬼から離れる方向へ 1 ステップ移動する。
-     */
     @Override
     public void move(Board board, List<Tagger> opponents) {
         if (captured) {
@@ -54,9 +49,10 @@ public class Child extends Player<Tagger> {
         Tagger nearest = null;
         int minDistance = Integer.MAX_VALUE;
         for (Tagger tagger : opponents) {
+            // チェス盤距離を計算
             int dx = Math.abs(this.x - tagger.getX());
             int dy = Math.abs(this.y - tagger.getY());
-            int distance = Math.max(dx, dy);  // チェス盤距離
+            int distance = Math.max(dx, dy);
             if (distance < minDistance) {
                 minDistance = distance;
                 nearest = tagger;
@@ -65,37 +61,14 @@ public class Child extends Player<Tagger> {
         setNearestOpponent(nearest);
     }
 
-    /**
-     * 指定された Tagger から離れる方向へ移動する。
-     * 基本的には「近づく」場合の逆方向をとるが、端にいてその方向が進めない場合は
-     * 水平・垂直のみの移動、または時計回りの代替方向を試みる。
-     */
     private void moveAwayFrom(Tagger target, Board board) {
         int dx = target.getX() - this.x;
         int dy = target.getY() - this.y;
-        int intendedStepX;
-        int intendedStepY;
-        if (dx > 0) {
-            intendedStepX = -1;
-        } else if (dx < 0) {
-            intendedStepX = 1;
-        } else {
-            intendedStepX = 0;
-        }
-        if (dy > 0) {
-            intendedStepY = -1;
-        } else if (dy < 0) {
-            intendedStepY = 1;
-        } else {
-            intendedStepY = 0;
-        }
-        //printデバッグ
-//        System.out.println("intendedStepX: " + intendedStepX + " intendedStepY: " + intendedStepY);
+        // 移動方向を決定，最も近い敵と反対方向に
+        int intendedStepX = Integer.compare(0, dx);
+        int intendedStepY = Integer.compare(0, dy);
         // 縦横どちらかのみに移動しようとする場合
         if (intendedStepX == 0 || intendedStepY == 0) {
-            // 北東の隅にいて北へ行こうとした場合，北西の隅にいて西にいた場合，南西の隅にいて南にいた場合，南東の隅にいて東にいた場合
-            // これらの時は時計回りしても壁にぶつかってしまうので移動しない
-            // それ以外の場合は移動する
             if (intendedStepX > 0) {
                 currentDir = 0; // 東
             } else if (intendedStepY < 0) {
@@ -145,7 +118,6 @@ public class Child extends Player<Tagger> {
         if (this.directionY != null) {
             copy.directionY = this.directionY.clone();
         }
-        // nearestOpponent はここではコピーせず、必要に応じて別途設定してください。
         copy.nearestOpponent = null;
         return copy;
     }
